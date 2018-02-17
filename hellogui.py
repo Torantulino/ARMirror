@@ -35,7 +35,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     # Detect Face
     faces = faceCascade.detectMultiScale(
         grey,
-        scaleFactor = 1.1,
+        scaleFactor = 2,
         minNeighbors = 5,
         minSize = (30,30),
         flags = cv2.CASCADE_SCALE_IMAGE
@@ -61,3 +61,4 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
 
 app.display()
+
