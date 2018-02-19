@@ -53,18 +53,20 @@ def RenderOnto(base, overlay, position, alphaMask):
     # Invert Alpha
     alphaInv = 1.0 - alpha
 
+    # Enable writing on base image
     base.setflags(write=1)
     
     for c in range(0, 3):
         base[y1B:y2B, x1B:x2B, c] = (alpha * overlay[y1O:y2O, x1O:x2O, c] +
                                  alphaInv * base[y1B:y2B, x1B:x2B, c])
 
+"""
     cv2.imshow("Last Augmented", base)
     key = cv2.waitKey(1) & 0xFF
 
     if key == ord("q"):
         cv2.destroyAllWindows()
-
+"""
 
 #Capture frames from the camera
 for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=True):
@@ -76,7 +78,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     # Detect Face
     faces = faceCascade.detectMultiScale(
         grey,
-        scaleFactor = 2.2,
+        scaleFactor = 2,
         minNeighbors = 5,
         minSize = (30,30),
         flags = cv2.CASCADE_SCALE_IMAGE
@@ -86,9 +88,13 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         
     # Draw rectangle around face
     for (x, y, w, h) in faces:
-        cv2.rectangle(frame.array, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        # Debug Rect
+        #v2.rectangle(frame.array, (x, y), (x+w, y+h), (0, 255, 0), 2)
 
-        RenderOnto(baseImg, imgGlasses[:, :, 0:3], (x, y), imgGlasses[:,:,3] / 255.0)
+        # Resize selected overlay ##Remove Glasses Hardcoding##
+        overlayR = cv2.resize(imgGlasses, (w, int(h/2)))
+
+        RenderOnto(baseImg, overlayR[:, :, 0:3], (x, int(y+h/5)), overlayR[:,:,3] / 255.0)
         
         break
     
