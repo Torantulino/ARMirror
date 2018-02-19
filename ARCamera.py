@@ -5,6 +5,7 @@ import numpy as np
 import time
 import cv2
 import sys
+import os
 
 #Initialise camera and get ref to raw feed
 camera = PiCamera()
@@ -12,28 +13,24 @@ camera.resolution = (640, 480)
 camera.framerate = 32
 rawCapture = PiRGBArray(camera, size=(640, 480))
 
+# Initialise variables
+selectedItem = 0
+
 # Create face cascade
 faceCascade = cv2.CascadeClassifier('haarcascade_frontalface_default.xml')
 
 #Wait for camera to initialise
 time.sleep(1)
 
-#------------------GLASSES---------------------------
+# Create Clothing Array
+clothing = []
 
-#Load Glasses TestImage - all channels
+#Load Test Images - all channels
+for file in os.listdir('pic'):
+    clothing.append(cv2.imread('pic/' + file, -1))
+    
 imgGlasses = cv2.imread('pic/glasses.png', -1)
 
-#Create glasses mask using only alpha
-#glassMask = imgGlasses[:,:,3]
-
-#invert mask
-#invGlassMask = cv2.bitwise_not(glassMask)
-
-#Convert glasses to BGR
-#imgGlasses = imgGlasses[:,:,0:3]
-#origGlassesHeight, origMaskWidth = glassMask.shape[:2]
-
-#-----------------------------------------------
 
 # Image overlay Method
 def RenderOnto(base, overlay, position, alphaMask):
@@ -78,7 +75,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     # Detect Face
     faces = faceCascade.detectMultiScale(
         grey,
-        scaleFactor = 2,
+        scaleFactor = 1.5,
         minNeighbors = 5,
         minSize = (30,30),
         flags = cv2.CASCADE_SCALE_IMAGE
@@ -88,23 +85,41 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
         
     # Draw rectangle around face
     for (x, y, w, h) in faces:
-        # Debug Rect
-        #v2.rectangle(frame.array, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        '''
+        # Debug Rectangle
+        v2.rectangle(frame.array, (x, y), (x+w, y+h), (0, 255, 0), 2)
+        '''
+        # Resize selected overlay
+        overlayR = cv2.resize(clothing[selectedItem], (w, int(h/2)))
 
-        # Resize selected overlay ##Remove Glasses Hardcoding##
-        overlayR = cv2.resize(imgGlasses, (w, int(h/2)))
-
+        # Render overlay onto camera frame
         RenderOnto(baseImg, overlayR[:, :, 0:3], (x, int(y+h/5)), overlayR[:,:,3] / 255.0)
         
         break
     
-
-    
+    # Render final frame
     cv2.imshow("Current Frame", baseImg)
     key = cv2.waitKey(1) & 0xFF
 
     rawCapture.truncate(0)
 
+    # Switch item
+    if key == ord("w"):
+        if len(clothing) > selectedItem + 1:
+            selectedItem += 1
+        else:
+            # Loop back to first Item
+            selectedItem = 0
+
+    if key == ord("s"):
+        if selectedItem - 1 >= 0:
+            selectedItem += -1
+        else:
+            # Loop to last item
+            selectedItem = len(clothing) - 1
+    #------------    
+
+    # Exit Program
     if key == ord("q"):
         cv2.destroyAllWindows()
         break
