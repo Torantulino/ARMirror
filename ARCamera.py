@@ -6,12 +6,16 @@ import time
 import cv2
 import sys
 import os
+import subprocess
 
 #Initialise camera and get ref to raw feed
 camera = PiCamera()
 camera.resolution = (640, 480)
 camera.framerate = 32
 rawCapture = PiRGBArray(camera, size=(640, 480))
+
+#Initialise Bluetooth Script
+blueARM = subprocess.Popen(['python', 'ARMBluetooth.py'])
 
 # Initialise variables
 selectedItem = 0
@@ -83,7 +87,7 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
 
     baseImg = frame.array
         
-    # Draw rectangle around face
+    # Overlay chosen accessory
     for (x, y, w, h) in faces:
         '''
         # Debug Rectangle
@@ -104,19 +108,29 @@ for frame in camera.capture_continuous(rawCapture, format="bgr", use_video_port=
     rawCapture.truncate(0)
 
     # Switch item
-    if key == ord("w"):
+    print ("Bluetooth Poll:", blueARM.poll())
+    # If Subprocess has finished running, run again
+    if blueARM.poll() != None:
+        print("BlueARM Launched")
+        # Execute Subprocess to wait for incomming data from phone
+        blueARM = subprocess.Popen(['python', 'ARMBluetooth.py'])
+    
+    
+    """
+    if mobileData == "next":
         if len(clothing) > selectedItem + 1:
             selectedItem += 1
         else:
             # Loop back to first Item
             selectedItem = 0
 
-    if key == ord("s"):
+    if mobileData == "s":
         if selectedItem - 1 >= 0:
             selectedItem += -1
         else:
             # Loop to last item
             selectedItem = len(clothing) - 1
+    """
     #------------    
 
     # Exit Program
